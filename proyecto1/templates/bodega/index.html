@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Bodega - Sistema RFID{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">
+                <i class="fas fa-warehouse"></i> Módulo de Bodega
+            </h2>
+            <p class="lead">Gestión completa de inventario y productos con tecnología RFID</p>
+        </div>
+    </div>
+
+   <!-- En templates/bodega/index.html - Actualizar la sección de tarjetas -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-boxes fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Gestión de Productos</h5>
+                <p class="card-text">Administrar productos, precios y stock con RFID</p>
+                <a href="{% url 'gestion_productos' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Acceder
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-tags fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Gestión de Marcas</h5>
+                <p class="card-text">Administrar marcas de productos</p>
+                <a href="{% url 'gestion_marcas' %}" class="btn btn-warning">
+                    <i class="fas fa-arrow-right"></i> Acceder
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Gestión de Clientes</h5>
+                <p class="card-text">Administrar información de clientes</p>
+                <a href="{% url 'gestion_clientes' %}" class="btn btn-success">
+                    <i class="fas fa-arrow-right"></i> Acceder
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-truck fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Gestión de Distribuidores</h5>
+                <p class="card-text">Administrar proveedores y distribuidores</p>
+                <a href="{% url 'gestion_distribuidores' %}" class="btn btn-info">
+                    <i class="fas fa-arrow-right"></i> Acceder
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

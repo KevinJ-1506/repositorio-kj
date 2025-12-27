@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4 text-primary">
+                <i class="fas fa-warehouse"></i> Sistema de Inventario RFID
+            </h1>
+            <p class="lead mb-5">Sistema integrado de gestión de inventario con tecnología RFID</p>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card h-100 border-primary">
+                        <div class="card-body text-center">
+                            <i class="fas fa-boxes fa-3x text-primary mb-3"></i>
+                            <h3 class="card-title">Bodega</h3>
+                            <p class="card-text">Gestión de productos, inventario y proveedores</p>
+                            <a href="{% url 'bodega_index' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right"></i> Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-success">
+                        <div class="card-body text-center">
+                            <i class="fas fa-cash-register fa-3x text-success mb-3"></i>
+                            <h3 class="card-title">Caja</h3>
+                            <p class="card-text">Procesamiento de ventas y atención al cliente</p>
+                            <a href="{% url 'caja_index' %}" class="btn btn-success btn-lg">
+                                <i class="fas fa-arrow-right"></i> Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
