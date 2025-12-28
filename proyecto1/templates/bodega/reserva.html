@@ -1,0 +1,475 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Productos - Bodega{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">
+                <i class="fas fa-boxes"></i> Gestión de Productos
+            </h2>
+        </div>
+    </div>
+
+    <!-- Configuración Lector RFID -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog"></i> Configuración Lector RFID
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Puerto COM</label>
+                                <select class="form-select" id="puerto-com">
+                                    <option value="COM3">COM3</option>
+                                    <option value="COM4">COM4</option>
+                                    <option value="COM5">COM5</option>
+                                    <option value="COM6">COM6</option>
+                                    <option value="COM7">COM7</option>
+                                    <option value="COM8">COM8</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Acciones</label>
+                                <div>
+                                    <button type="button" class="btn btn-info btn-sm" id="detectar-puertos">
+                                        <i class="fas fa-search"></i> Detectar Puertos
+                                    </button>
+                                    <button type="button" class="btn btn-warning btn-sm" id="probar-conexion">
+                                        <i class="fas fa-bolt"></i> Probar Conexión
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Área de diagnóstico -->
+                    <div id="area-diagnostico" class="mt-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6>Diagnóstico RFID</h6>
+                            <div id="diagnostico-info"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario para agregar producto -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus-circle"></i> Agregar Nuevo Producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="producto-form">
+                        {% csrf_token %}
+                        
+                        <!-- Campo EPC con lectura RFID -->
+                        <div class="mb-3">
+                            <label for="epc" class="form-label">EPC RFID</label>
+                            <div class="input-group">
+                                {{ form.epc }}
+                                <button type="button" class="btn btn-outline-primary" id="leer-rfid-simple">
+                                    <i class="fas fa-rss"></i> Leer RFID
+                                </button>
+                                <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalMultiRFID">
+                                    <i class="fas fa-layer-group"></i> Múltiple
+                                </button>
+                            </div>
+                            <div class="form-text">Haz clic en "Leer RFID" para capturar el código de la etiqueta</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre del Producto</label>
+                                    {{ form.nombre }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Marca</label>
+                                    {{ form.marca }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            {{ form.descripcion }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Precio Compra</label>
+                                    {{ form.precio_compra }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Precio Venta</label>
+                                    {{ form.precio_venta }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Stock</label>
+                                    {{ form.stock }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Distribuidor</label>
+                                    {{ form.distribuidor }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha Vencimiento</label>
+                                    {{ form.fecha_vencimiento }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Guardar Producto
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de productos -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list"></i> Lista de Productos ({{ productos.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>EPC</th>
+                                    <th>Nombre</th>
+                                    <th>Precio Venta</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos %}
+                                <tr>
+                                    <td><code>{{ producto.epc|truncatechars:10 }}</code></td>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td>Q{{ producto.precio_venta|default:"0.00" }}</td>
+                                    <td>
+                                        <span class="badge {% if producto.stock > 10 %}bg-success{% elif producto.stock > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ producto.stock }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        No hay productos registrados
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para lectura múltiple RFID -->
+<div class="modal fade" id="modalMultiRFID" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lectura Múltiple RFID</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Cantidad de productos a escanear:</label>
+                    <input type="number" class="form-control" id="cantidad-productos" value="1" min="1" max="50">
+                </div>
+                <button type="button" class="btn btn-primary w-100" id="iniciar-lectura-multiple">
+                    <i class="fas fa-play"></i> Iniciar Lectura Múltiple
+                </button>
+                <div id="resultado-multiple" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Detectar puertos disponibles
+document.getElementById('detectar-puertos').addEventListener('click', function() {
+    const btn = this;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detectando...';
+    btn.disabled = true;
+
+    fetch('{% url "detectar_puertos" %}')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = '<strong>Puertos detectados:</strong><br>';
+            if (data.puertos.length > 0) {
+                data.puertos.forEach(puerto => {
+                    html += `• ${puerto.dispositivo} - ${puerto.descripcion}<br>`;
+                });
+                // Actualizar select de puertos
+                const selectPuerto = document.getElementById('puerto-com');
+                selectPuerto.innerHTML = '';
+                data.puertos.forEach(puerto => {
+                    const option = document.createElement('option');
+                    option.value = puerto.dispositivo;
+                    option.textContent = `${puerto.dispositivo} - ${puerto.descripcion}`;
+                    selectPuerto.appendChild(option);
+                });
+            } else {
+                html += 'No se detectaron puertos seriales';
+            }
+            document.getElementById('diagnostico-info').innerHTML = html;
+            document.getElementById('area-diagnostico').style.display = 'block';
+        } else {
+            document.getElementById('diagnostico-info').innerHTML = 
+                `<strong>Error:</strong> ${data.error}`;
+            document.getElementById('area-diagnostico').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        document.getElementById('diagnostico-info').innerHTML = 
+            `<strong>Error de red:</strong> ${error}`;
+        document.getElementById('area-diagnostico').style.display = 'block';
+    })
+    .finally(() => {
+        btn.innerHTML = '<i class="fas fa-search"></i> Detectar Puertos';
+        btn.disabled = false;
+    });
+});
+
+// Probar conexión RFID
+document.getElementById('probar-conexion').addEventListener('click', function() {
+    const btn = this;
+    const puerto = document.getElementById('puerto-com').value;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Probando...';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('puerto', puerto);
+
+    fetch('{% url "leer_rfid" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let mensaje = `<strong>¡Conexión exitosa!</strong><br>`;
+            mensaje += `EPC leído: <code>${data.epc}</code><br>`;
+            mensaje += `Total de etiquetas detectadas: ${data.total_etiquetas}<br>`;
+            if (data.existe) {
+                mensaje += `✅ Producto registrado: ${data.producto.nombre}`;
+            } else {
+                mensaje += '⚠️ Producto no registrado en base de datos';
+            }
+            document.getElementById('diagnostico-info').innerHTML = mensaje;
+            document.getElementById('area-diagnostico').style.display = 'block';
+            
+            // Mostrar respuesta completa en consola para debugging
+            console.log('Respuesta del lector:', data.respuesta_cruda);
+        } else {
+            let mensaje = `<strong>Error de conexión:</strong><br>${data.error}`;
+            if (data.sugerencia) {
+                mensaje += `<br><em>${data.sugerencia}</em>`;
+            }
+            if (data.respuesta_cruda) {
+                mensaje += `<br><small>Respuesta del lector: ${data.respuesta_cruda}</small>`;
+            }
+            document.getElementById('diagnostico-info').innerHTML = mensaje;
+            document.getElementById('area-diagnostico').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        document.getElementById('diagnostico-info').innerHTML = 
+            `<strong>Error de red:</strong><br>${error}`;
+        document.getElementById('area-diagnostico').style.display = 'block';
+    })
+    .finally(() => {
+        btn.innerHTML = '<i class="fas fa-bolt"></i> Probar Conexión';
+        btn.disabled = false;
+    });
+});
+
+// Lectura RFID simple
+document.getElementById('leer-rfid-simple').addEventListener('click', function() {
+    const btn = this;
+    const puerto = document.getElementById('puerto-com').value;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Leyendo...';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('puerto', puerto);
+
+    fetch('{% url "leer_rfid" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('epc-field').value = data.epc;
+            let mensaje = `✅ EPC leído: ${data.epc}`;
+            if (data.total_etiquetas > 1) {
+                mensaje += `\n⚠️ Se detectaron ${data.total_etiquetas} etiquetas, usando la primera`;
+            }
+            if (data.existe) {
+                mensaje += `\n✅ Producto existente: ${data.producto.nombre}`;
+            } else {
+                mensaje += `\n⚠️ Producto no registrado - Complete los datos`;
+            }
+            alert(mensaje);
+        } else {
+            let mensajeError = `❌ Error: ${data.error}`;
+            if (data.respuesta_cruda) {
+                console.log('Respuesta cruda:', data.respuesta_cruda);
+                mensajeError += `\nRespuesta del lector: ${data.respuesta_cruda}`;
+            }
+            alert(mensajeError);
+        }
+    })
+    .catch(error => {
+        alert('Error de conexión: ' + error);
+    })
+    .finally(() => {
+        btn.innerHTML = '<i class="fas fa-rss"></i> Leer RFID';
+        btn.disabled = false;
+    });
+});
+
+// Lectura múltiple RFID
+document.getElementById('iniciar-lectura-multiple').addEventListener('click', function() {
+    const btn = this;
+    const cantidad = document.getElementById('cantidad-productos').value;
+    const puerto = document.getElementById('puerto-com').value;
+    const resultadoDiv = document.getElementById('resultado-multiple');
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Escaneando...';
+    btn.disabled = true;
+    resultadoDiv.innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('cantidad', cantidad);
+    formData.append('puerto', puerto);
+
+    fetch('{% url "leer_multiple_rfid" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = `<div class="alert alert-success">
+                <strong>¡Éxito!</strong> Se leyeron ${data.total} etiquetas (de ${data.total_detectadas} detectadas):
+            </div>`;
+            html += '<div class="list-group">';
+            data.epcs.forEach((epc, index) => {
+                html += `<div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${index + 1}.</strong> <code>${epc}</code>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="usarEPC('${epc}')">
+                        Usar
+                    </button>
+                </div>`;
+            });
+            html += '</div>';
+            
+            if (data.total_detectadas > data.total) {
+                html += `<div class="alert alert-warning mt-2">
+                    <small>Se detectaron ${data.total_detectadas} etiquetas pero se mostraron ${data.total} según la cantidad solicitada.</small>
+                </div>`;
+            }
+            
+            resultadoDiv.innerHTML = html;
+        } else {
+            resultadoDiv.innerHTML = `<div class="alert alert-danger">
+                <strong>Error:</strong> ${data.error}
+                ${data.respuesta_cruda ? `<br><small>Respuesta: ${data.respuesta_cruda}</small>` : ''}
+            </div>`;
+        }
+    })
+    .catch(error => {
+        resultadoDiv.innerHTML = `<div class="alert alert-danger">Error de conexión: ${error}</div>`;
+    })
+    .finally(() => {
+        btn.innerHTML = '<i class="fas fa-play"></i> Iniciar Lectura Múltiple';
+        btn.disabled = false;
+    });
+});
+
+function usarEPC(epc) {
+    document.getElementById('epc-field').value = epc;
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalMultiRFID'));
+    modal.hide();
+    
+    // Mostrar mensaje de confirmación
+    alert(`EPC ${epc} asignado al formulario`);
+}
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Sistema RFID inicializado');
+    // Opcional: Detectar puertos automáticamente al cargar
+    // document.getElementById('detectar-puertos').click();
+});
+</script>
+{% endblock %}
+
+
+

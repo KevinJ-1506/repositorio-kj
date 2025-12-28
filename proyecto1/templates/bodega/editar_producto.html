@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Producto - Bodega{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'gestion_productos' %}">Gestión de Productos</a></li>
+                    <li class="breadcrumb-item active">Editar Producto</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-4">
+                <i class="fas fa-edit"></i> Editar Producto: {{ producto.nombre }}
+            </h2>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-triangle{% endif %}"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> Formulario de Edición
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="editar-producto-form">
+                        {% csrf_token %}
+                        
+                        <!-- Campo EPC -->
+                        <div class="mb-3">
+                            <label for="epc" class="form-label">EPC RFID <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" name="epc" id="epc" class="form-control" 
+                                       value="{{ producto.epc }}" 
+                                       placeholder="Ej: AABB0000C209870000000000" required
+                                       maxlength="24" readonly>
+                                <button type="button" class="btn btn-outline-secondary" onclick="alert('En modo edición, el EPC no se puede modificar. Crea un nuevo producto si necesitas cambiar el EPC.')">
+                                    <i class="fas fa-lock"></i> Bloqueado
+                                </button>
+                            </div>
+                            <div class="form-text">El EPC RFID no se puede modificar en edición</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Nombre del Producto <span class="text-danger">*</span></label>
+                                    <input type="text" name="nombre" id="nombre" class="form-control" 
+                                           value="{{ producto.nombre }}" 
+                                           placeholder="Ej: Smartphone X1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="marca" class="form-label">Marca</label>
+                                    <select name="marca" id="marca" class="form-control">
+                                        <option value="">Selecciona una marca</option>
+                                        {% for marca in marcas %}
+                                        <option value="{{ marca.id }}" 
+                                                {% if producto.marca.id == marca.id %}selected{% endif %}>
+                                            {{ marca.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea name="descripcion" id="descripcion" class="form-control" 
+                                      rows="3" placeholder="Descripción del producto...">{{ producto.descripcion }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="precio_compra" class="form-label">Precio Compra (Q)</label>
+                                    <input type="number" name="precio_compra" id="precio_compra" 
+                                           class="form-control" 
+                                           value="{{ producto.precio_compra|default:'0.00' }}" 
+                                           step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="precio_venta" class="form-label">Precio Venta (Q) <span class="text-danger">*</span></label>
+                                    <input type="number" name="precio_venta" id="precio_venta" 
+                                           class="form-control" 
+                                           value="{{ producto.precio_venta|default:'0.00' }}" 
+                                           step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="stock" class="form-label">Stock <span class="text-danger">*</span></label>
+                                    <input type="number" name="stock" id="stock" 
+                                           class="form-control" 
+                                           value="{{ producto.stock }}" 
+                                           min="0" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="distribuidor" class="form-label">Distribuidor</label>
+                                    <select name="distribuidor" id="distribuidor" class="form-control">
+                                        <option value="">Selecciona un distribuidor</option>
+                                        {% for distribuidor in distribuidores %}
+                                        <option value="{{ distribuidor.id }}" 
+                                                {% if producto.distribuidor.id == distribuidor.id %}selected{% endif %}>
+                                            {{ distribuidor.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha_vencimiento" class="form-label">Fecha Vencimiento</label>
+                                    <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" 
+                                           class="form-control" 
+                                           value="{{ producto.fecha_vencimiento|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="codigo_barras" class="form-label">Código de Barras</label>
+                                    <input type="text" name="codigo_barras" id="codigo_barras" 
+                                           class="form-control" 
+                                           value="{{ producto.codigo_barras }}" 
+                                           placeholder="Opcional">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="peso" class="form-label">Peso (kg)</label>
+                                    <input type="number" name="peso" id="peso" 
+                                           class="form-control" 
+                                           value="{{ producto.peso|default:'0' }}" 
+                                           step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="stock_minimo" class="form-label">Stock Mínimo</label>
+                                    <input type="number" name="stock_minimo" id="stock_minimo" 
+                                           class="form-control" 
+                                           value="{{ producto.stock_minimo|default:'0' }}" 
+                                           min="0" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="ubicacion" class="form-label">Ubicación</label>
+                                    <input type="text" name="ubicacion" id="ubicacion" 
+                                           class="form-control" 
+                                           value="{{ producto.ubicacion }}" 
+                                           placeholder="Ej: Almacén A, Estante B">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save"></i> Actualizar Producto
+                            </button>
+                            <a href="{% url 'gestion_productos' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver a la Lista
+                            </a>
+                            <button type="button" class="btn btn-outline-warning" onclick="resetForm()">
+                                <i class="fas fa-undo"></i> Restaurar Valores
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Información y Eliminación -->
+        <div class="col-md-4">
+            <!-- Información del Producto -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información del Producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>EPC RFID:</strong><br>
+                        <code>{{ producto.epc }}</code>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Fecha de Creación:</strong><br>
+                        {{ producto.fecha_creacion|date:"d/m/Y H:i" }}
+                    </div>
+                    {% if producto.fecha_actualizacion %}
+                    <div class="mb-3">
+                        <strong>Última Actualización:</strong><br>
+                        {{ producto.fecha_actualizacion|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <strong>Estado:</strong><br>
+                        <span class="badge bg-success">Activo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zona de Eliminación -->
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Zona de Peligro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-danger">
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer. 
+                        Una vez eliminado, el producto no podrá ser recuperado.
+                    </p>
+                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#modalEliminar">
+                        <i class="fas fa-trash"></i> Eliminar Producto Permanentemente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <h6>¿Estás seguro de que deseas eliminar este producto?</h6>
+                    <p class="mb-0"><strong>Producto:</strong> {{ producto.nombre }}</p>
+                    <p class="mb-0"><strong>EPC:</strong> {{ producto.epc }}</p>
+                </div>
+                <p class="text-danger">
+                    <strong>Esta acción es irreversible.</strong> Todos los datos del producto 
+                    serán eliminados permanentemente del sistema.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <form method="post" action="{% url 'eliminar_producto' producto.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Sí, Eliminar Permanentemente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Guardar valores originales para restaurar
+const valoresOriginales = {
+    nombre: "{{ producto.nombre }}",
+    marca: "{{ producto.marca.id|default:'' }}",
+    descripcion: "{{ producto.descripcion }}",
+    precio_compra: "{{ producto.precio_compra|default:'0.00' }}",
+    precio_venta: "{{ producto.precio_venta|default:'0.00' }}",
+    stock: "{{ producto.stock }}",
+    distribuidor: "{{ producto.distribuidor.id|default:'' }}",
+    fecha_vencimiento: "{{ producto.fecha_vencimiento|date:'Y-m-d' }}",
+    codigo_barras: "{{ producto.codigo_barras }}",
+    peso: "{{ producto.peso|default:'0' }}",
+    stock_minimo: "{{ producto.stock_minimo|default:'0' }}",
+    ubicacion: "{{ producto.ubicacion }}"
+};
+
+// Función para restaurar valores originales
+function resetForm() {
+    if (confirm('¿Restaurar todos los campos a sus valores originales?')) {
+        document.getElementById('nombre').value = valoresOriginales.nombre;
+        document.getElementById('marca').value = valoresOriginales.marca;
+        document.getElementById('descripcion').value = valoresOriginales.descripcion;
+        document.getElementById('precio_compra').value = valoresOriginales.precio_compra;
+        document.getElementById('precio_venta').value = valoresOriginales.precio_venta;
+        document.getElementById('stock').value = valoresOriginales.stock;
+        document.getElementById('distribuidor').value = valoresOriginales.distribuidor;
+        document.getElementById('fecha_vencimiento').value = valoresOriginales.fecha_vencimiento;
+        document.getElementById('codigo_barras').value = valoresOriginales.codigo_barras;
+        document.getElementById('peso').value = valoresOriginales.peso;
+        document.getElementById('stock_minimo').value = valoresOriginales.stock_minimo;
+        document.getElementById('ubicacion').value = valoresOriginales.ubicacion;
+        
+        // Mostrar mensaje de éxito
+        showAlert('Valores restaurados correctamente', 'success');
+    }
+}
+
+// Función para mostrar alertas temporales
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid .row:first-child');
+    container.parentNode.insertBefore(alertDiv, container.nextSibling);
+    
+    // Auto-eliminar después de 3 segundos
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+
+// Validación del formulario
+document.getElementById('editar-producto-form').addEventListener('submit', function(e) {
+    const precioVenta = parseFloat(document.getElementById('precio_venta').value);
+    const stock = parseInt(document.getElementById('stock').value);
+    
+    if (precioVenta < 0) {
+        e.preventDefault();
+        showAlert('El precio de venta no puede ser negativo', 'danger');
+        return;
+    }
+    
+    if (stock < 0) {
+        e.preventDefault();
+        showAlert('El stock no puede ser negativo', 'danger');
+        return;
+    }
+    
+    // Mostrar mensaje de confirmación
+    if (!confirm('¿Estás seguro de que deseas guardar los cambios?')) {
+        e.preventDefault();
+    }
+});
+
+// Prevenir envío accidental con Enter en campos de texto
+document.querySelectorAll('input[type="text"]').forEach(input => {
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}
